@@ -1,0 +1,40 @@
+{
+	"schemaVersion": 1,
+	"id": "elemental",
+	"version": "${version}",
+	"name": "elemental",
+	"description": "Elemental powers.",
+	"authors": [
+		"andreasfh"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/elemental/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"andreasfh.elemental.Elemental"
+		],
+		"fabric-datagen": [
+			"andreasfh.elemental.ElementalDataGenerator"
+		],
+		"client": [
+			"andreasfh.elemental.ElementalClient"
+		]
+	},
+	"mixins": [
+		"elemental.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.16.5",
+		"minecraft": "~1.21.1",
+		"java": ">=21",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"another-mod": "*"
+	}
+}
