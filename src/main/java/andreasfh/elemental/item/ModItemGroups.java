@@ -1,6 +1,7 @@
 package andreasfh.elemental.item;
 
 import andreasfh.elemental.Elemental;
+import andreasfh.elemental.block.ModBlocks;
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
@@ -17,6 +18,8 @@ public class ModItemGroups {
                     .entries((displayContext, entries) -> {
                         entries.add(ModItems.KINDLING);
                         entries.add(ModItems.SCROLL_COMBUSTION);
+
+                        entries.add(ModBlocks.ARCANE_ALTAR);
                     }).build());
 
 

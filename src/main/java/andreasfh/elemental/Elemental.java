@@ -1,5 +1,6 @@
 package andreasfh.elemental;
 
+import andreasfh.elemental.block.ModBlocks;
 import andreasfh.elemental.item.ModItemGroups;
 import andreasfh.elemental.item.ModItems;
 import net.fabricmc.api.ModInitializer;
@@ -15,5 +16,6 @@ public class Elemental implements ModInitializer {
 	public void onInitialize() {
 		ModItems.registerModItems();
 		ModItemGroups.registerModItemGroups();
+		ModBlocks.registerModBlocks();
 	}
 }

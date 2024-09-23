@@ -1,5 +1,7 @@
 {
   "item.elemental.kindling": "Kindling of Combustion",
 
+  "block.elemental.arcane_altar":  "Arcane Altar",
+
   "itemgroup.elemental.elemental": "Elemental"
 }
