@@ -1,5 +1,7 @@
 package andreasfh.elemental;
 
+import andreasfh.elemental.item.ModItemGroups;
+import andreasfh.elemental.item.ModItems;
 import net.fabricmc.api.ModInitializer;
 
 import org.slf4j.Logger;
@@ -11,6 +13,7 @@ public class Elemental implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
-
+		ModItems.registerModItems();
+		ModItemGroups.registerModItemGroups();
 	}
 }
