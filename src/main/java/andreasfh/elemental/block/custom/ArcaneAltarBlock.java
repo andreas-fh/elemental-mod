@@ -7,8 +7,6 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.ItemActionResult;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -19,16 +17,16 @@ public class ArcaneAltarBlock extends Block {
     }
 
     @Override
-    protected ItemActionResult onUseWithItem(ItemStack stack, BlockState state, World world, BlockPos pos,
-                                             PlayerEntity player, Hand hand, BlockHitResult hit) {
+    protected ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player,
+                                 BlockHitResult hit) {
+        ItemStack stack = player.getMainHandStack();
         if (stack.isOf(ModItems.KINDLING)) {
-            if (!world.isClient) {
+            if (world.isClient) {
                 spawnParticles(world, pos);
             }
+            return ActionResult.SUCCESS;
         }
-
-
-        return super.onUseWithItem(stack, state, world, pos, player, hand, hit);
+        return super.onUse(state, world, pos, player, hit);
     }
 
     private void spawnParticles(World world, BlockPos pos) {
