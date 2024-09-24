@@ -58,11 +58,10 @@ public class ArcaneAltarBlock extends Block {
             return;
         }
 
-        // Update ticks and check if it's time to spawn the next batch
-        ticksSinceLastBatch++;
-
         int delayBetweenBatches = 1;
 
+        // Update ticks and check if it's time to spawn the next batch
+        ticksSinceLastBatch++;
         if (ticksSinceLastBatch >= delayBetweenBatches) {
 
             if (client.world != null && particleSpawnPos != null) {
@@ -96,7 +95,6 @@ public class ArcaneAltarBlock extends Block {
             double offsetZ = Math.sin(angle) * radius;
             double currentY = pos.getY() + 1.1 + (particleIndex * heightStep);
 
-            // Spawn particles (END_ROD in this case) at the block position
             world.addParticle(ParticleTypes.END_ROD,
                     centerX + offsetX,
                     currentY,
