@@ -17,5 +17,6 @@ public class Elemental implements ModInitializer {
 		ModItems.registerModItems();
 		ModItemGroups.registerModItemGroups();
 		ModBlocks.registerModBlocks();
+
 	}
 }
