@@ -30,20 +30,20 @@ public class ArcaneAltarBlock extends Block {
         ItemStack stack = player.getMainHandStack();
 
         if (stack.isOf(ModItems.KINDLING)) {
-            if (world.isClient) {
-                // Reset the counters
-                particleBatchCounter = 0;
-                ticksSinceLastBatch = 0;
-                shouldSpawnParticles = true;
-                particleSpawnPos = pos;  // Store the block position for particles
+            if (world.isClient && !shouldSpawnParticles) {
+                    // Reset the counters
+                    particleBatchCounter = 0;
+                    ticksSinceLastBatch = 0;
+                    shouldSpawnParticles = true;
+                    particleSpawnPos = pos;  // Store the block position for particles
 
-                // Ensure the event is only registered once
-                if (!isTickEventRegistered) {
-                    isTickEventRegistered = true;
+                    // Ensure the event is only registered once
+                    if (!isTickEventRegistered) {
+                        isTickEventRegistered = true;
 
-                    // Register the tick event on the client side
-                    ClientTickEvents.END_CLIENT_TICK.register(this::onClientTick);
-                }
+                        // Register the tick event on the client side
+                        ClientTickEvents.END_CLIENT_TICK.register(this::onClientTick);
+                    }
 
             }
             return ActionResult.SUCCESS;
@@ -72,7 +72,7 @@ public class ArcaneAltarBlock extends Block {
 
                 // Stop spawning if we have completed all batches
                 if (particleBatchCounter >= 50) {
-                    shouldSpawnParticles = false;  // Disable further particle spawning
+                    shouldSpawnParticles = false;
                 }
             }
         }

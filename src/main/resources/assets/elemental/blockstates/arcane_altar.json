@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "elemental:block/arcane_altar"
+    }
+  }
+}
