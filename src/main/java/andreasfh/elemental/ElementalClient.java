@@ -1,11 +1,15 @@
 package andreasfh.elemental;
 
+import andreasfh.elemental.client.block.ArcaneAltarScrollRenderer;
+import andreasfh.elemental.client.hud.AbilityHudOverlay;
 import net.fabricmc.api.ClientModInitializer;
 
 public class ElementalClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        AbilityHudOverlay.registerAbilityHudOverlay();
+        ArcaneAltarScrollRenderer.registerRendering();
 
     }
 }

@@ -1,10 +1,11 @@
 package andreasfh.elemental.block.custom;
 
-import andreasfh.elemental.item.ModItems;
+import andreasfh.elemental.blockentity.custom.ArcaneAltarBlockEntity;
+import andreasfh.elemental.item.custom.ScrollItem;
+import com.mojang.serialization.MapCodec;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.ShapeContext;
+import net.minecraft.block.*;
+import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
@@ -17,10 +18,12 @@ import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.util.shape.VoxelShapes;
 import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
-public class ArcaneAltarBlock extends Block {
+public class ArcaneAltarBlock extends BlockWithEntity {
 
     private int particleBatchCounter = 0;
     private int ticksSinceLastBatch = 0;
@@ -33,24 +36,42 @@ public class ArcaneAltarBlock extends Block {
     }
 
     @Override
+    protected MapCodec<? extends BlockWithEntity> getCodec() {
+        return null;
+    }
+
+    @Override
     public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit) {
-        ItemStack stack = player.getMainHandStack();
+        ItemStack mainHandStack = player.getMainHandStack();
+        ArcaneAltarBlockEntity arcaneAltarEntity = (ArcaneAltarBlockEntity) world.getBlockEntity(pos);
 
-        if (stack.isOf(ModItems.KINDLING)) {
+        if (mainHandStack.getItem() instanceof ScrollItem) {
             if (world.isClient && !shouldSpawnParticles) {
-                    // Reset the counters
-                    particleBatchCounter = 0;
-                    ticksSinceLastBatch = 0;
-                    shouldSpawnParticles = true;
-                    particleSpawnPos = pos;  // Store the block position for particles
 
-                    // Ensure the event is only registered once
-                    if (!isTickEventRegistered) {
-                        isTickEventRegistered = true;
+                // Display and remove item from inventory
+                if (!player.isCreative()) {
+                    mainHandStack.setCount(mainHandStack.getCount() - 1);
+                }
+                if (arcaneAltarEntity.getDisplayedItem() == ItemStack.EMPTY) {
+                    arcaneAltarEntity.setDisplayedItem(mainHandStack);
+                }
+                arcaneAltarEntity.markDirty();
+                world.updateListeners(pos, state, state, Block.NOTIFY_ALL);
 
-                        // Register the tick event on the client side
-                        ClientTickEvents.END_CLIENT_TICK.register(this::onClientTick);
-                    }
+
+                // Reset the counters
+                particleBatchCounter = 0;
+                ticksSinceLastBatch = 0;
+                shouldSpawnParticles = true;
+                particleSpawnPos = pos;  // Store the block position for particles
+
+                // Ensure the event is only registered once
+                if (!isTickEventRegistered) {
+                    isTickEventRegistered = true;
+
+                    // Register the tick event on the client side
+                    ClientTickEvents.END_CLIENT_TICK.register(this::onClientTick);
+                }
 
             }
             return ActionResult.SUCCESS;
@@ -80,11 +101,22 @@ public class ArcaneAltarBlock extends Block {
                 // Stop spawning if we have completed all batches
                 if (particleBatchCounter >= 50) {
                     shouldSpawnParticles = false;
+
+                    // Removed displayed item
+                    BlockEntity blockEntity = client.world.getBlockEntity(particleSpawnPos);
+                    if (blockEntity instanceof ArcaneAltarBlockEntity arcaneAltarEntity) {
+                        arcaneAltarEntity.setDisplayedItem(ItemStack.EMPTY);
+
+                        // Update client rendering
+                        arcaneAltarEntity.markDirty();
+                        client.world.updateListeners(particleSpawnPos, client.world.getBlockState(
+                                particleSpawnPos), client.world.getBlockState(particleSpawnPos),
+                                Block.NOTIFY_ALL);
+                    }
                 }
             }
         }
     }
-
 
     private void spawnParticleBatch(World world, BlockPos pos, int batchNumber) {
         double radius = 0.5f;  // Radius of the spiral
@@ -96,7 +128,7 @@ public class ArcaneAltarBlock extends Block {
         double centerZ = pos.getZ() + 0.5f;
 
         for (int i = 0; i < particlesInBatch; i++) {
-            int particleIndex = batchNumber * particlesInBatch + i;  // Calculate the overall particle index
+            int particleIndex = batchNumber * particlesInBatch + i;  // Calculate overall particle index
             double angle = 2 * Math.PI * (particleIndex % particlesPerRevolution) / particlesPerRevolution;
             double offsetX = Math.cos(angle) * radius;
             double offsetZ = Math.sin(angle) * radius;
@@ -152,4 +184,14 @@ public class ArcaneAltarBlock extends Block {
             Block.createCuboidShape(2, 11, 4, 4, 12, 6),
             Block.createCuboidShape(2, 8, 2, 14, 11, 14)
     ).reduce((v1, v2) -> VoxelShapes.combineAndSimplify(v1, v2, BooleanBiFunction.OR)).get();
+
+    @Override
+    public @Nullable BlockEntity createBlockEntity(BlockPos pos, BlockState state) {
+        return new ArcaneAltarBlockEntity(pos, state);
+    }
+
+    @Override
+    protected BlockRenderType getRenderType(BlockState state) {
+        return BlockRenderType.MODEL;
+    }
 }

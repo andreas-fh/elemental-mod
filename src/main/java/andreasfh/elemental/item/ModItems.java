@@ -10,7 +10,7 @@ import net.minecraft.util.Identifier;
 public class ModItems {
     public static final Item KINDLING = registerItem("kindling", new Item(new Item.Settings()));
 
-    public static final Item SCROLL_COMBUSTION = registerItem("scroll_combustion", new ScrollItem(new Item.Settings()));
+    public static final Item SCROLL_COMBUSTION = registerItem("scroll_combustion", new ScrollItem(new Item.Settings(), "orange"));
 
 
     private static Item registerItem(String name, Item item) {
