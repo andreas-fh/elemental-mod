@@ -1,7 +1,10 @@
 package andreasfh.elemental.block.custom;
 
 import andreasfh.elemental.blockentity.custom.ArcaneAltarBlockEntity;
+import andreasfh.elemental.component.ModComponents;
 import andreasfh.elemental.item.custom.ScrollItem;
+import andreasfh.elemental.util.ColorUtil;
+import com.mojang.datafixers.kinds.IdF;
 import com.mojang.serialization.MapCodec;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.block.*;
@@ -9,7 +12,10 @@ import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.particle.DustParticleEffect;
 import net.minecraft.particle.ParticleTypes;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.function.BooleanBiFunction;
 import net.minecraft.util.hit.BlockHitResult;
@@ -19,11 +25,15 @@ import net.minecraft.util.shape.VoxelShapes;
 import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Vector3f;
 
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 public class ArcaneAltarBlock extends BlockWithEntity {
+
+    private float red;
+    private float green;
+    private float blue;
 
     private int particleBatchCounter = 0;
     private int ticksSinceLastBatch = 0;
@@ -42,18 +52,27 @@ public class ArcaneAltarBlock extends BlockWithEntity {
 
     @Override
     public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit) {
-        ItemStack mainHandStack = player.getMainHandStack();
+        ItemStack stack = player.getMainHandStack();
         ArcaneAltarBlockEntity arcaneAltarEntity = (ArcaneAltarBlockEntity) world.getBlockEntity(pos);
 
-        if (mainHandStack.getItem() instanceof ScrollItem) {
+        if (stack.getItem() instanceof ScrollItem) {
             if (world.isClient && !shouldSpawnParticles) {
+
+                // Get scroll color
+                String hexString = stack.getOrDefault(ModComponents.SCROLL_COLOR, "FFFFFF");
+                int[] rgb = ColorUtil.hexToRGB(hexString);
+
+                // Convert hex-color to RGB float values
+                this.red = rgb[0] / 255.0f;
+                this.green = rgb[1] / 255.0f;
+                this.blue = rgb[2] / 255.0f;
 
                 // Display and remove item from inventory
                 if (!player.isCreative()) {
-                    mainHandStack.setCount(mainHandStack.getCount() - 1);
+                    stack.setCount(stack.getCount() - 1);
                 }
                 if (arcaneAltarEntity.getDisplayedItem() == ItemStack.EMPTY) {
-                    arcaneAltarEntity.setDisplayedItem(mainHandStack);
+                    arcaneAltarEntity.setDisplayedItem(stack);
                 }
                 arcaneAltarEntity.markDirty();
                 world.updateListeners(pos, state, state, Block.NOTIFY_ALL);
@@ -94,13 +113,14 @@ public class ArcaneAltarBlock extends BlockWithEntity {
 
             if (client.world != null && particleSpawnPos != null) {
 
-                spawnParticleBatch(client.world, particleSpawnPos, particleBatchCounter);
+                spawnSpiralParticleBatch(client.world, particleSpawnPos, particleBatchCounter, red, green, blue);
                 particleBatchCounter++;
                 ticksSinceLastBatch = 0;  // Reset tick counter
 
                 // Stop spawning if we have completed all batches
                 if (particleBatchCounter >= 50) {
                     shouldSpawnParticles = false;
+                    spawnParticleFinish(client.world, particleSpawnPos);
 
                     // Removed displayed item
                     BlockEntity blockEntity = client.world.getBlockEntity(particleSpawnPos);
@@ -118,7 +138,11 @@ public class ArcaneAltarBlock extends BlockWithEntity {
         }
     }
 
-    private void spawnParticleBatch(World world, BlockPos pos, int batchNumber) {
+    private void spawnSpiralParticleBatch(World world, BlockPos pos, int batchNumber, float red, float green, float blue) {
+        if (!world.isClient) {
+            return;
+        }
+
         double radius = 0.5f;  // Radius of the spiral
         int particlesPerRevolution = 25;  // Number of particles per revolution
         int particlesInBatch = 1;  // Particles per batch
@@ -127,6 +151,9 @@ public class ArcaneAltarBlock extends BlockWithEntity {
         double centerX = pos.getX() + 0.5f;
         double centerZ = pos.getZ() + 0.5f;
 
+        // Define colored dust particle
+        DustParticleEffect dustParticle = new DustParticleEffect(new Vector3f(red, green, blue), 1.0f);
+
         for (int i = 0; i < particlesInBatch; i++) {
             int particleIndex = batchNumber * particlesInBatch + i;  // Calculate overall particle index
             double angle = 2 * Math.PI * (particleIndex % particlesPerRevolution) / particlesPerRevolution;
@@ -134,11 +161,39 @@ public class ArcaneAltarBlock extends BlockWithEntity {
             double offsetZ = Math.sin(angle) * radius;
             double currentY = pos.getY() + 0.9 + (particleIndex * heightStep);
 
-            world.addParticle(ParticleTypes.END_ROD,
+            world.addParticle(dustParticle,
                     centerX + offsetX,
                     currentY,
                     centerZ + offsetZ,
                     0.0, 0.0, 0.0);  // No velocity for static particles
+        }
+    }
+
+    private void spawnParticleFinish(World world, BlockPos pos) {
+        double centerX = pos.getX() + 0.5;
+        double centerY = pos.getY() + 1.0;
+        double centerZ = pos.getZ() + 0.5;
+
+        int particleAmount = 30;
+        double particleRadius = 1.5;
+        double verticalSpread = 0.25;
+
+        for (int i = 0; i < particleAmount; i++) {
+            // Add a bit of random displacement
+            double angle = world.random.nextDouble() * 2 * Math.PI;
+            double radius = world.random.nextDouble() * particleRadius;
+
+            // Convert polar coordinates (radius, angle) to Cartesian coordinates (X, Z)
+            double offsetX = Math.cos(angle) * radius;
+            double offsetZ = Math.sin(angle) * radius;
+
+            double offsetY = (world.random.nextDouble() - 0.5) * verticalSpread;
+
+            world.addParticle(ParticleTypes.TOTEM_OF_UNDYING,
+                    centerX + offsetX,
+                    centerY + offsetY,
+                    centerZ + offsetZ,
+                    0.0, 0.0, 0.0); // No velocity for static particles
         }
     }
 
