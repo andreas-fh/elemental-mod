@@ -4,7 +4,6 @@ import andreasfh.elemental.blockentity.custom.ArcaneAltarBlockEntity;
 import andreasfh.elemental.component.ModComponents;
 import andreasfh.elemental.item.custom.ScrollItem;
 import andreasfh.elemental.util.ColorUtil;
-import com.mojang.datafixers.kinds.IdF;
 import com.mojang.serialization.MapCodec;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.block.*;
@@ -14,8 +13,6 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.particle.DustParticleEffect;
 import net.minecraft.particle.ParticleTypes;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.function.BooleanBiFunction;
 import net.minecraft.util.hit.BlockHitResult;
@@ -41,6 +38,10 @@ public class ArcaneAltarBlock extends BlockWithEntity {
     private static boolean isTickEventRegistered = false;
     private BlockPos particleSpawnPos;
 
+    private boolean isExplosionActive = false;
+    private int explosionTicksRemaining = 0;
+    private final int explosionDuration = 40;
+
     public ArcaneAltarBlock(Settings settings) {
         super(settings);
     }
@@ -56,7 +57,7 @@ public class ArcaneAltarBlock extends BlockWithEntity {
         ArcaneAltarBlockEntity arcaneAltarEntity = (ArcaneAltarBlockEntity) world.getBlockEntity(pos);
 
         if (stack.getItem() instanceof ScrollItem) {
-            if (world.isClient && !shouldSpawnParticles) {
+            if (world.isClient && !shouldSpawnParticles && !isExplosionActive) {
 
                 // Get scroll color
                 String hexString = stack.getOrDefault(ModComponents.SCROLL_COLOR, "FFFFFF");
@@ -67,16 +68,17 @@ public class ArcaneAltarBlock extends BlockWithEntity {
                 this.green = rgb[1] / 255.0f;
                 this.blue = rgb[2] / 255.0f;
 
-                // Display and remove item from inventory
-                if (!player.isCreative()) {
-                    stack.setCount(stack.getCount() - 1);
-                }
                 if (arcaneAltarEntity.getDisplayedItem() == ItemStack.EMPTY) {
                     arcaneAltarEntity.setDisplayedItem(stack);
                 }
+
+                // Display and remove item from inventory
+                if (!player.isCreative()) {
+                    stack.decrement(1);
+                }
+
                 arcaneAltarEntity.markDirty();
                 world.updateListeners(pos, state, state, Block.NOTIFY_ALL);
-
 
                 // Reset the counters
                 particleBatchCounter = 0;
@@ -95,33 +97,38 @@ public class ArcaneAltarBlock extends BlockWithEntity {
             }
             return ActionResult.SUCCESS;
         }
-
         return ActionResult.PASS;
     }
 
 
     private void onClientTick(MinecraftClient client) {
-        if (!shouldSpawnParticles) {
-            return;
+        if (shouldSpawnParticles) {
+            ticksSinceLastBatch++;
+            int delayBetweenBatches = 1;
+
+            // Check if it's time to spawn the next batch
+            if (ticksSinceLastBatch >= delayBetweenBatches) {
+                if (client.world != null && particleSpawnPos != null) {
+                    spawnSpiralParticleBatch(client.world, particleSpawnPos, particleBatchCounter, red, green, blue);
+                    particleBatchCounter++;
+                    ticksSinceLastBatch = 0;  // Reset tick counter
+
+                    // Stop spawning if we have completed all batches
+                    if (particleBatchCounter >= 50) {
+                        shouldSpawnParticles = false;
+                        isExplosionActive = true;
+                        explosionTicksRemaining = explosionDuration;
+                        spawnParticleExplosion(client.world, particleSpawnPos);
+                    }
+                }
+            }
         }
 
-        int delayBetweenBatches = 1;
+            // Explosion logic
+            if (isExplosionActive && explosionTicksRemaining > 0) {
+                explosionTicksRemaining--;
 
-        // Update ticks and check if it's time to spawn the next batch
-        ticksSinceLastBatch++;
-        if (ticksSinceLastBatch >= delayBetweenBatches) {
-
-            if (client.world != null && particleSpawnPos != null) {
-
-                spawnSpiralParticleBatch(client.world, particleSpawnPos, particleBatchCounter, red, green, blue);
-                particleBatchCounter++;
-                ticksSinceLastBatch = 0;  // Reset tick counter
-
-                // Stop spawning if we have completed all batches
-                if (particleBatchCounter >= 50) {
-                    shouldSpawnParticles = false;
-                    spawnParticleFinish(client.world, particleSpawnPos);
-
+                if (explosionTicksRemaining <= 0) {
                     // Removed displayed item
                     BlockEntity blockEntity = client.world.getBlockEntity(particleSpawnPos);
                     if (blockEntity instanceof ArcaneAltarBlockEntity arcaneAltarEntity) {
@@ -130,18 +137,26 @@ public class ArcaneAltarBlock extends BlockWithEntity {
                         // Update client rendering
                         arcaneAltarEntity.markDirty();
                         client.world.updateListeners(particleSpawnPos, client.world.getBlockState(
-                                particleSpawnPos), client.world.getBlockState(particleSpawnPos),
+                                        particleSpawnPos), client.world.getBlockState(particleSpawnPos),
                                 Block.NOTIFY_ALL);
+
+                        client.world.addParticle(ParticleTypes.TOTEM_OF_UNDYING,
+                                particleSpawnPos.getX() + 0.5,
+                                particleSpawnPos.getY() + 1.5,
+                                particleSpawnPos.getZ() + 0.5,
+                                0.0, 0.0, 0.0);
                     }
+                    isExplosionActive = false;
+                    shouldSpawnParticles = false;
+                    particleBatchCounter = 0;
+                    ticksSinceLastBatch = 0;
                 }
             }
         }
-    }
+
 
     private void spawnSpiralParticleBatch(World world, BlockPos pos, int batchNumber, float red, float green, float blue) {
-        if (!world.isClient) {
-            return;
-        }
+        if (!world.isClient) return;
 
         double radius = 0.5f;  // Radius of the spiral
         int particlesPerRevolution = 25;  // Number of particles per revolution
@@ -169,31 +184,29 @@ public class ArcaneAltarBlock extends BlockWithEntity {
         }
     }
 
-    private void spawnParticleFinish(World world, BlockPos pos) {
+    private void spawnParticleExplosion(World world, BlockPos pos) {
         double centerX = pos.getX() + 0.5;
-        double centerY = pos.getY() + 1.0;
+        double centerY = pos.getY() + 1.5;
         double centerZ = pos.getZ() + 0.5;
+        int explosionParticles = 60;
+        double speedMultiplier = 0.8;
 
-        int particleAmount = 30;
-        double particleRadius = 1.5;
-        double verticalSpread = 0.25;
+        for (int i = 0; i < explosionParticles; i++) {
+            // Generate random spherical coordinates for even distribution
+            double theta = world.random.nextDouble() * 2 * Math.PI;
+            double phi = Math.acos(2 * world.random.nextDouble() - 1);
 
-        for (int i = 0; i < particleAmount; i++) {
-            // Add a bit of random displacement
-            double angle = world.random.nextDouble() * 2 * Math.PI;
-            double radius = world.random.nextDouble() * particleRadius;
+            // Convert spherical coordinates (angles) to Cartesian coordinates (X, Y, Z)
+            double velocityX = Math.sin(phi) * Math.cos(theta);
+            double velocityY = Math.sin(phi) * Math.sin(theta);
+            double velocityZ = Math.cos(phi);
 
-            // Convert polar coordinates (radius, angle) to Cartesian coordinates (X, Z)
-            double offsetX = Math.cos(angle) * radius;
-            double offsetZ = Math.sin(angle) * radius;
-
-            double offsetY = (world.random.nextDouble() - 0.5) * verticalSpread;
-
-            world.addParticle(ParticleTypes.TOTEM_OF_UNDYING,
-                    centerX + offsetX,
-                    centerY + offsetY,
-                    centerZ + offsetZ,
-                    0.0, 0.0, 0.0); // No velocity for static particles
+            world.addParticle(ParticleTypes.ENCHANT,
+                    centerX, centerY, centerZ,
+                    velocityX * speedMultiplier,
+                    velocityY * speedMultiplier,
+                    velocityZ * speedMultiplier
+            );
         }
     }
 
