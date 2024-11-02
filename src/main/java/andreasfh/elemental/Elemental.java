@@ -5,6 +5,7 @@ import andreasfh.elemental.blockentity.ModBlockEntities;
 import andreasfh.elemental.component.ModComponents;
 import andreasfh.elemental.item.ModItemGroups;
 import andreasfh.elemental.item.ModItems;
+import andreasfh.elemental.util.Ability;
 import net.fabricmc.api.ModInitializer;
 
 import org.slf4j.Logger;
@@ -16,6 +17,7 @@ public class Elemental implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
+		Ability.registerAbilities();
 		ModItems.registerModItems();
 		ModItemGroups.registerModItemGroups();
 		ModBlocks.registerModBlocks();

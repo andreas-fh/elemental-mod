@@ -38,9 +38,9 @@ public class ArcaneAltarBlock extends BlockWithEntity {
     private static boolean isTickEventRegistered = false;
     private BlockPos particleSpawnPos;
 
-    private boolean isExplosionActive = false;
-    private int explosionTicksRemaining = 0;
-    private final int explosionDuration = 40;
+    private boolean isGlyphActive = false;
+    private int glyphTicksRemaining = 0;
+    private final int glyphDuration = 40;
 
     public ArcaneAltarBlock(Settings settings) {
         super(settings);
@@ -57,7 +57,7 @@ public class ArcaneAltarBlock extends BlockWithEntity {
         ArcaneAltarBlockEntity arcaneAltarEntity = (ArcaneAltarBlockEntity) world.getBlockEntity(pos);
 
         if (stack.getItem() instanceof ScrollItem) {
-            if (world.isClient && !shouldSpawnParticles && !isExplosionActive) {
+            if (world.isClient && !shouldSpawnParticles && !isGlyphActive) {
 
                 // Get scroll color
                 String hexString = stack.getOrDefault(ModComponents.SCROLL_COLOR, "FFFFFF");
@@ -116,43 +116,43 @@ public class ArcaneAltarBlock extends BlockWithEntity {
                     // Stop spawning if we have completed all batches
                     if (particleBatchCounter >= 50) {
                         shouldSpawnParticles = false;
-                        isExplosionActive = true;
-                        explosionTicksRemaining = explosionDuration;
-                        spawnParticleExplosion(client.world, particleSpawnPos);
+                        isGlyphActive = true;
+                        glyphTicksRemaining = glyphDuration;
+                        spawnGlyphAnimation(client.world, particleSpawnPos);
                     }
                 }
             }
         }
 
-            // Explosion logic
-            if (isExplosionActive && explosionTicksRemaining > 0) {
-                explosionTicksRemaining--;
+        // Explosion logic
+        if (isGlyphActive && glyphTicksRemaining > 0) {
+            glyphTicksRemaining--;
 
-                if (explosionTicksRemaining <= 0) {
-                    // Removed displayed item
-                    BlockEntity blockEntity = client.world.getBlockEntity(particleSpawnPos);
-                    if (blockEntity instanceof ArcaneAltarBlockEntity arcaneAltarEntity) {
-                        arcaneAltarEntity.setDisplayedItem(ItemStack.EMPTY);
+            if (glyphTicksRemaining <= 0) {
+                // Removed displayed item
+                BlockEntity blockEntity = client.world.getBlockEntity(particleSpawnPos);
+                if (blockEntity instanceof ArcaneAltarBlockEntity arcaneAltarEntity) {
+                    arcaneAltarEntity.setDisplayedItem(ItemStack.EMPTY);
 
-                        // Update client rendering
-                        arcaneAltarEntity.markDirty();
-                        client.world.updateListeners(particleSpawnPos, client.world.getBlockState(
-                                        particleSpawnPos), client.world.getBlockState(particleSpawnPos),
-                                Block.NOTIFY_ALL);
-
-                        client.world.addParticle(ParticleTypes.TOTEM_OF_UNDYING,
-                                particleSpawnPos.getX() + 0.5,
-                                particleSpawnPos.getY() + 1.5,
-                                particleSpawnPos.getZ() + 0.5,
-                                0.0, 0.0, 0.0);
-                    }
-                    isExplosionActive = false;
-                    shouldSpawnParticles = false;
-                    particleBatchCounter = 0;
-                    ticksSinceLastBatch = 0;
+                    // Update client rendering
+                    arcaneAltarEntity.markDirty();
+                    client.world.updateListeners(particleSpawnPos, client.world.getBlockState(
+                                    particleSpawnPos), client.world.getBlockState(particleSpawnPos),
+                            Block.NOTIFY_ALL);
+                    client.world.addParticle(ParticleTypes.TOTEM_OF_UNDYING,
+                            particleSpawnPos.getX() + 0.5,
+                            particleSpawnPos.getY() + 1.5,
+                            particleSpawnPos.getZ() + 0.5,
+                            0.0, 0.0, 0.0);
+                    // PLAY SOUND TO ALL NEARBY PLAYERS HERE
                 }
+                isGlyphActive = false;
+                shouldSpawnParticles = false;
+                particleBatchCounter = 0;
+                ticksSinceLastBatch = 0;
             }
         }
+    }
 
 
     private void spawnSpiralParticleBatch(World world, BlockPos pos, int batchNumber, float red, float green, float blue) {
@@ -184,14 +184,14 @@ public class ArcaneAltarBlock extends BlockWithEntity {
         }
     }
 
-    private void spawnParticleExplosion(World world, BlockPos pos) {
+    private void spawnGlyphAnimation(World world, BlockPos pos) {
         double centerX = pos.getX() + 0.5;
         double centerY = pos.getY() + 1.5;
         double centerZ = pos.getZ() + 0.5;
-        int explosionParticles = 60;
+        int glyphParticles = 60;
         double speedMultiplier = 0.8;
 
-        for (int i = 0; i < explosionParticles; i++) {
+        for (int i = 0; i < glyphParticles; i++) {
             // Generate random spherical coordinates for even distribution
             double theta = world.random.nextDouble() * 2 * Math.PI;
             double phi = Math.acos(2 * world.random.nextDouble() - 1);
