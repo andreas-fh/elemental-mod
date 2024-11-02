@@ -1,4 +1,4 @@
-package andreasfh.elemental.util;
+package andreasfh.elemental.record;
 
 import andreasfh.elemental.Elemental;
 import net.minecraft.util.Identifier;

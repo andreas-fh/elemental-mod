@@ -1,7 +1,7 @@
 package andreasfh.elemental.client.hud;
 
 import andreasfh.elemental.Elemental;
-import andreasfh.elemental.util.Ability;
+import andreasfh.elemental.record.Ability;
 import andreasfh.elemental.util.BooleanUtil;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.MinecraftClient;
