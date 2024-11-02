@@ -34,8 +34,8 @@ public class AbilityHudOverlay implements HudRenderCallback {
         int x = 0;
         int y = 10;
         drawContext.drawTexture(ABILITY_HUD_TEXTURE, x, y, 0, 0, 32, 94, 32, 94);
-        drawContext.drawTexture(FIRST_ABILITY.getIdentifier(), x+6, y+6, 0, 0, 20, 20, 20, 20);
-        drawContext.drawTexture(SECOND_ABILITY.getIdentifier(), x+6, y+37, 0, 0, 20, 20, 20, 20);
-        drawContext.drawTexture(THIRD_ABILITY.getIdentifier(), x+6, y+68, 0, 0, 20, 20, 20, 20);
+        drawContext.drawTexture(FIRST_ABILITY.identifier(), x+6, y+6, 0, 0, 20, 20, 20, 20);
+        drawContext.drawTexture(SECOND_ABILITY.identifier(), x+6, y+37, 0, 0, 20, 20, 20, 20);
+        drawContext.drawTexture(THIRD_ABILITY.identifier(), x+6, y+68, 0, 0, 20, 20, 20, 20);
     }
 }
