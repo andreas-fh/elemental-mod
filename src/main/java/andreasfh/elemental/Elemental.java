@@ -2,10 +2,11 @@ package andreasfh.elemental;
 
 import andreasfh.elemental.block.ModBlocks;
 import andreasfh.elemental.blockentity.ModBlockEntities;
+import andreasfh.elemental.command.CommandManager;
 import andreasfh.elemental.component.ModComponents;
 import andreasfh.elemental.item.ModItemGroups;
 import andreasfh.elemental.item.ModItems;
-import andreasfh.elemental.record.Ability;
+import andreasfh.elemental.data.record.Ability;
 import net.fabricmc.api.ModInitializer;
 
 import org.slf4j.Logger;
@@ -18,6 +19,7 @@ public class Elemental implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		Ability.registerAbilities();
+		CommandManager.registerCommands();
 		ModItems.registerModItems();
 		ModItemGroups.registerModItemGroups();
 		ModBlocks.registerModBlocks();

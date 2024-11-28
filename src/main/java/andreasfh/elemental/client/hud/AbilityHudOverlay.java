@@ -1,8 +1,9 @@
 package andreasfh.elemental.client.hud;
 
 import andreasfh.elemental.Elemental;
-import andreasfh.elemental.record.Ability;
+import andreasfh.elemental.data.record.Ability;
 import andreasfh.elemental.util.BooleanUtil;
+import static andreasfh.elemental.data.record.Constants.*;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
@@ -10,17 +11,21 @@ import net.minecraft.client.render.RenderTickCounter;
 import net.minecraft.util.Identifier;
 
 public class AbilityHudOverlay implements HudRenderCallback {
-    private static final Identifier ABILITY_HUD_TEXTURE = Identifier.of(Elemental.MOD_ID, "textures/gui/hud/abilityhud.png");
-    private Ability FIRST_ABILITY = Ability.getAbility("empty");
-    private Ability SECOND_ABILITY = Ability.getAbility("empty");
-    private Ability THIRD_ABILITY = Ability.getAbility("empty");
+    private static Identifier ABILITY_HUD_TEXTURE = Identifier.of(Elemental.MOD_ID, "textures/gui/hud/abilityhud1.png");
+    private static Ability FIRST_ABILITY = ABILITY_EMPTY;
+    private static Ability SECOND_ABILITY = ABILITY_EMPTY;
+    private static Ability THIRD_ABILITY = ABILITY_EMPTY;
 
     public static void registerAbilityHudOverlay() {
         Elemental.LOGGER.info("Registering HUD elements for " + Elemental.MOD_ID);
         HudRenderCallback.EVENT.register(new AbilityHudOverlay());
     }
 
-    public void selectAbilities(Ability firstAbility, Ability secondAbility, Ability thirdAbility) {
+    public static void setAbilityHudTexture(Identifier identifier) {
+        ABILITY_HUD_TEXTURE = identifier;
+    }
+
+    public static void selectAbilities(Ability firstAbility, Ability secondAbility, Ability thirdAbility) {
         FIRST_ABILITY = firstAbility;
         SECOND_ABILITY = secondAbility;
         THIRD_ABILITY = thirdAbility;

@@ -1,6 +1,7 @@
 package andreasfh.elemental.component;
 
 import andreasfh.elemental.Elemental;
+
 import com.mojang.serialization.Codec;
 import net.minecraft.component.ComponentType;
 import net.minecraft.registry.Registries;
@@ -12,7 +13,6 @@ import java.util.function.UnaryOperator;
 public class ModComponents {
     public static final ComponentType<String> SCROLL_COLOR =
             register("color", builder -> builder.codec(Codec.STRING));
-
 
 
     private static <T>ComponentType<T> register(String name, UnaryOperator<ComponentType.Builder<T>> builderOperator) {
