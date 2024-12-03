@@ -26,6 +26,6 @@ public class Elemental implements ModInitializer {
 		ModBlockEntities.registerModBlockEntities();
 		ModComponents.registerDataComponentTypes();
 
-
+		
 	}
 }

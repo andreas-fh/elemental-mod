@@ -2,17 +2,18 @@ package andreasfh.elemental.command;
 
 import andreasfh.elemental.Elemental;
 import andreasfh.elemental.client.hud.AbilityHudOverlay;
+import andreasfh.elemental.component.custom.AbilityComponentImpl;
+import andreasfh.elemental.component.custom.AbilityComponentProvider;
 import andreasfh.elemental.data.record.Ability;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.command.CommandSource;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import static net.minecraft.server.command.CommandManager.*;
 
 import java.util.Map;
-
-
 
 public class CommandManager {
 
@@ -40,7 +41,7 @@ public class CommandManager {
                                                     return 1;
                                                 })))
 
-                                // Select abilities
+                                // Set selected abilities
                                 .then(literal("set_abilities")
                                         .then(argument("first_ability", StringArgumentType.string())
                                                 .suggests((commandContext, suggestionsBuilder) -> CommandSource.suggestMatching(
@@ -63,7 +64,45 @@ public class CommandManager {
                                                                     setAbilities(firstAbility, secondAbility, thirdAbility);
                                                                     return 1;
                                                                 })
-                                                        )))))));
+                                                        ))))
+
+                                // Set or get ability unlock status
+                                .then(literal("is_unlocked")
+                                        .then(argument("ability", StringArgumentType.string())
+                                                .suggests((commandContext, suggestionsBuilder) -> CommandSource.suggestMatching(
+                                                        Ability.getAbilities().keySet(), suggestionsBuilder))
+                                                .executes(commandContext -> {
+                                                    String ability = StringArgumentType.getString(commandContext, "ability");
+                                                    PlayerEntity player = commandContext.getSource().getPlayer();
+                                                    if (player instanceof AbilityComponentProvider provider) {
+                                                        AbilityComponentImpl abilityComponent = provider.getAbilityComponent();
+                                                        commandContext.getSource().sendFeedback(() -> Text.literal("Ability " + ability + " is " +
+                                                                (abilityComponent.isAbilityUnlocked(ability) ? "unlocked" : "locked")), false);
+                                                    }
+                                                    return 1;
+                                                })
+                                                .then(literal("true")
+                                                        .executes(commandContext -> {
+                                                            String ability = StringArgumentType.getString(commandContext, "ability");
+                                                            PlayerEntity player = commandContext.getSource().getPlayer();
+                                                            if (player instanceof AbilityComponentProvider provider) {
+                                                                AbilityComponentImpl abilityComponent = provider.getAbilityComponent();
+                                                                abilityComponent.unlockAbility(ability);
+                                                            }
+
+                                                            return 1;
+                                                        }))
+                                                .then(literal("false")
+                                                        .executes(commandContext -> {
+                                                            String ability = StringArgumentType.getString(commandContext, "ability");
+                                                            PlayerEntity player = commandContext.getSource().getPlayer();
+                                                            if (player instanceof AbilityComponentProvider provider) {
+                                                                AbilityComponentImpl abilityComponent = provider.getAbilityComponent();
+                                                                abilityComponent.lockAbility(ability);
+                                                            }
+                                                            return 1;
+                                                        }))
+                                )))));
     }
 
     private static void setAbilities(String abilityKey1, String abilityKey2, String abilityKey3) {
